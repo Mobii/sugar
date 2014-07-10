@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class Select<T extends SugarRecord<?>> implements Iterable {
+public class Select<T extends SugarRecord<?,?>> implements Iterable<T> {
 
     private Class<T> record;
     private String[] arguments;
@@ -22,7 +22,7 @@ public class Select<T extends SugarRecord<?>> implements Iterable {
         this.record = record;
     }
 
-    public static <T extends SugarRecord<T>> Select<T> from(Class<T> record) {
+    public static <T extends SugarRecord<T,?>> Select<T> from(Class<T> record) {
         return new Select<T>(record);
     }
 

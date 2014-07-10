@@ -19,25 +19,27 @@ import java.util.*;
 
 import static com.orm.SugarApp.getSugarContext;
 
-public class SugarRecord<T>{
+public abstract class SugarRecord<T,I>{
 
     @Ignore
     String tableName = getSqlName();
 
-    protected Long id = null;
+    protected Long _id = null;
+    
+    public abstract I getId();
 
     public void delete() {
         SQLiteDatabase db = getSugarContext().getDatabase().getDB();
-        db.delete(this.tableName, "Id=?", new String[]{getId().toString()});
+        db.delete(this.tableName, "_Id=?", new String[]{getId().toString()});
     }
 
-    public static <T extends SugarRecord<?>> void deleteAll(Class<T> type) {
+    public static <T extends SugarRecord<?,?>> void deleteAll(Class<T> type) {
         Database db = getSugarContext().getDatabase();
         SQLiteDatabase sqLiteDatabase = db.getDB();
         sqLiteDatabase.delete(getTableName(type), null, null);
     }
 
-    public static <T extends SugarRecord<?>> void deleteAll(Class<T> type, String whereClause, String... whereArgs ) {
+    public static <T extends SugarRecord<?,?>> void deleteAll(Class<T> type, String whereClause, String... whereArgs ) {
         Database db = getSugarContext().getDatabase();
         SQLiteDatabase sqLiteDatabase = db.getDB();
         sqLiteDatabase.delete(getTableName(type), whereClause, whereArgs);
@@ -48,12 +50,12 @@ public class SugarRecord<T>{
     }
 
     @SuppressWarnings("deprecation")
-    public static <T extends SugarRecord<?>> void saveInTx(T... objects ) {
+    public static <T extends SugarRecord<?,?>> void saveInTx(T... objects ) {
         saveInTx(Arrays.asList(objects));
     }
 
     @SuppressWarnings("deprecation")
-    public static <T extends SugarRecord<?>> void saveInTx(Collection<T> objects ) {
+    public static <T extends SugarRecord<?,?>> void saveInTx(Collection<T> objects ) {
         SQLiteDatabase sqLiteDatabase = getSugarContext().getDatabase().getDB();
 
         try{
@@ -85,7 +87,7 @@ public class SugarRecord<T>{
                 if (SugarRecord.class.isAssignableFrom(columnType)) {
                     values.put(columnName,
                             (columnValue != null)
-                                    ? String.valueOf(((SugarRecord) columnValue).id)
+                                    ? String.valueOf(((SugarRecord) columnValue)._id)
                                     : "0");
                 } else {
                     if (columnType.equals(Short.class) || columnType.equals(short.class)) {
@@ -122,43 +124,50 @@ public class SugarRecord<T>{
             }
         }
 
-        id = db.insertWithOnConflict(getSqlName(), null, values, SQLiteDatabase.CONFLICT_REPLACE);
+        Cursor cursor = db.query(getSqlName(),null, "ID = ?", new String[]{String.valueOf(getId())}, null, null, null);
+        if(cursor != null && cursor.getCount() > 0) {
+                cursor.moveToFirst();
+                _id = cursor.getLong(cursor.getColumnIndex("_ID"));
+                db.update(getSqlName(), values, "ID = ?", new String[]{String.valueOf(getId())});
+        } else {
+                _id = db.insert(getSqlName(), null, values);
+        }
 
-        Log.i("Sugar", getClass().getSimpleName() + " saved : " + id);
-        return id;
+        Log.i("Sugar", getClass().getSimpleName() + " saved : " + _id);
+        return _id;
     }
 
-    public static <T extends SugarRecord<?>> List<T> listAll(Class<T> type) {
+    public static <T extends SugarRecord<?,?>> List<T> listAll(Class<T> type) {
         return find(type, null, null, null, null, null);
     }
 
-    public static <T extends SugarRecord<?>> T findById(Class<T> type, Long id) {
-        List<T> list = find( type, "id=?", new String[]{String.valueOf(id)}, null, null, "1");
+    public static <T extends SugarRecord<?,?>> T findById(Class<T> type, Long id) {
+        List<T> list = find( type, "_id=?", new String[]{String.valueOf(id)}, null, null, "1");
         if (list.isEmpty()) return null;
         return list.get(0);
     }
 
-    public static <T extends SugarRecord<?>> T findById(Class<T> type, Integer id) {
+    public static <T extends SugarRecord<?,?>> T findById(Class<T> type, Integer id) {
         return findById(type, Long.valueOf(id));
     }
 
-    public static <T extends SugarRecord<?>> Iterator<T> findAll(Class<T> type) {
+    public static <T extends SugarRecord<?,?>> Iterator<T> findAll(Class<T> type) {
         return findAsIterator(type, null, null, null, null, null);
     }
 
-    public static <T extends SugarRecord<?>> Iterator<T> findAsIterator(Class<T> type,
+    public static <T extends SugarRecord<?,?>> Iterator<T> findAsIterator(Class<T> type,
                                                                         String whereClause, String... whereArgs) {
         return findAsIterator(type, whereClause, whereArgs, null, null, null);
     }
 
-    public static <T extends SugarRecord<?>> Iterator<T> findWithQueryAsIterator(Class<T> type, String query, String... arguments) {
+    public static <T extends SugarRecord<?,?>> Iterator<T> findWithQueryAsIterator(Class<T> type, String query, String... arguments) {
         Database db = getSugarContext().getDatabase();
         SQLiteDatabase sqLiteDatabase = db.getDB();
         Cursor c = sqLiteDatabase.rawQuery(query, arguments);
         return new CursorIterator<T>(type, c);
     }
 
-    public static <T extends SugarRecord<?>> Iterator<T> findAsIterator(Class<T> type,
+    public static <T extends SugarRecord<?,?>> Iterator<T> findAsIterator(Class<T> type,
                                                                     String whereClause, String[] whereArgs,
                                                                     String groupBy, String orderBy, String limit) {
 
@@ -169,12 +178,12 @@ public class SugarRecord<T>{
         return new CursorIterator<T>(type, c);
     }
 
-    public static <T extends SugarRecord<?>> List<T> find(Class<T> type,
+    public static <T extends SugarRecord<?,?>> List<T> find(Class<T> type,
                                                        String whereClause, String... whereArgs) {
         return find(type, whereClause, whereArgs, null, null, null);
     }
 
-    public static <T extends SugarRecord<?>> List<T> findWithQuery(Class<T> type, String query, String... arguments){
+    public static <T extends SugarRecord<?,?>> List<T> findWithQuery(Class<T> type, String query, String... arguments){
 
         Database db = getSugarContext().getDatabase();
         SQLiteDatabase sqLiteDatabase = db.getDB();
@@ -200,7 +209,7 @@ public class SugarRecord<T>{
         getSugarContext().getDatabase().getDB().execSQL(query, arguments);
     }
 
-    public static <T extends SugarRecord<?>> List<T> find(Class<T> type,
+    public static <T extends SugarRecord<?,?>> List<T> find(Class<T> type,
                                                        String whereClause, String[] whereArgs,
                                                        String groupBy, String orderBy, String limit) {
         Database db = getSugarContext().getDatabase();
@@ -223,16 +232,16 @@ public class SugarRecord<T>{
         return toRet;
     }
 
-    public static <T extends SugarRecord<?>> long count(Class<?> type) {
+    public static <T extends SugarRecord<?,?>> long count(Class<?> type) {
         return count(type, null, null, null, null, null);
     }
     
-    public static <T extends SugarRecord<?>> long count(Class<?> type,
+    public static <T extends SugarRecord<?,?>> long count(Class<?> type,
             String whereClause, String[] whereArgs) {
     	return count(type, whereClause, whereArgs, null, null, null);
     }
     
-    public static <T extends SugarRecord<?>> long count(Class<?> type,
+    public static <T extends SugarRecord<?,?>> long count(Class<?> type,
             String whereClause, String[] whereArgs,
             String groupBy, String orderBy, String limit) {
     	
@@ -276,7 +285,7 @@ public class SugarRecord<T>{
                     continue;
                 }
 
-                if(colName.equalsIgnoreCase("id")){
+                if(colName.equalsIgnoreCase("_id")){
                     long cid = cursor.getLong(columnIndex);
                     field.set(this, Long.valueOf(cid));
                 }else if (fieldType.equals(long.class) || fieldType.equals(Long.class)) {
@@ -341,7 +350,7 @@ public class SugarRecord<T>{
 
         for (Field f : entities.keySet()) {
             try {
-                f.set(this, findById((Class<? extends SugarRecord<?>>) f.getType(), 
+                f.set(this, findById((Class<? extends SugarRecord<?,?>>) f.getType(), 
                         entities.get(f)));
             } catch (SQLiteException e) {
             } catch (IllegalArgumentException e) {
@@ -389,15 +398,15 @@ public class SugarRecord<T>{
         return StringUtil.toSQLName(type.getSimpleName());
     }
 
-    public Long getId() {
-        return id;
+    public Long get_Id() {
+        return _id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void set_Id(Long id) {
+        this._id = id;
     }
 
-    static class CursorIterator<E extends SugarRecord<?>> implements Iterator<E> {
+    static class CursorIterator<E extends SugarRecord<?,?>> implements Iterator<E> {
         Class<E> type;
         Cursor cursor;
 

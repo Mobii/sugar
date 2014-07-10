@@ -35,7 +35,7 @@ public class SugarDb extends SQLiteOpenHelper {
 
     }
 
-    private <T extends SugarRecord<?>> List<T> getDomainClasses(Context context) {
+    private <T extends SugarRecord<?,?>> List<T> getDomainClasses(Context context) {
         List<T> domainClasses = new ArrayList<T>();
         try {
             for (String className : getAllClasses(context)) {
@@ -55,7 +55,7 @@ public class SugarDb extends SQLiteOpenHelper {
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends SugarRecord<?>> T getDomainClass(String className, Context context) {
+    private <T extends SugarRecord<?,?>> T getDomainClass(String className, Context context) {
         Log.i("Sugar", "domain class");
         Class<?> discoveredClass = null;
         try {
@@ -145,18 +145,18 @@ public class SugarDb extends SQLiteOpenHelper {
         createDatabase(sqLiteDatabase);
     }
 
-    private <T extends SugarRecord<?>> void createDatabase(SQLiteDatabase sqLiteDatabase) {
+    private <T extends SugarRecord<?,?>> void createDatabase(SQLiteDatabase sqLiteDatabase) {
         List<T> domainClasses = getDomainClasses(context);
         for (T domain : domainClasses) {
             createTable(domain, sqLiteDatabase);
         }
     }
 
-    private <T extends SugarRecord<?>> void createTable(T table, SQLiteDatabase sqLiteDatabase) {
+    private <T extends SugarRecord<?,?>> void createTable(T table, SQLiteDatabase sqLiteDatabase) {
         Log.i("Sugar", "create table");
         List<Field> fields = table.getTableFields();
         StringBuilder sb = new StringBuilder("CREATE TABLE ").append(table.getSqlName()).append(
-                " ( ID INTEGER PRIMARY KEY AUTOINCREMENT ");
+                " ( _ID INTEGER PRIMARY KEY AUTOINCREMENT ");
 
         for (Field column : fields) {
             String columnName = StringUtil.toSQLName(column.getName());
@@ -164,7 +164,7 @@ public class SugarDb extends SQLiteOpenHelper {
 
             if (columnType != null) {
 
-                if (columnName.equalsIgnoreCase("Id")) {
+                if (columnName.equalsIgnoreCase("_Id")) {
                     continue;
                 }
                 sb.append(", ").append(columnName).append(" ").append(columnType);
@@ -193,7 +193,7 @@ public class SugarDb extends SQLiteOpenHelper {
     /**
      * Create the tables that do not exist.
      */
-    private <T extends SugarRecord<?>> void doUpgrade(SQLiteDatabase sqLiteDatabase) {
+    private <T extends SugarRecord<?,?>> void doUpgrade(SQLiteDatabase sqLiteDatabase) {
         List<T> domainClasses = getDomainClasses(context);
         for (T domain : domainClasses) {
             try {// we try to do a select, if fails then (?) there isn't the table
@@ -205,7 +205,7 @@ public class SugarDb extends SQLiteOpenHelper {
         }
     }
 
-    private <T extends SugarRecord<?>> void deleteTables(SQLiteDatabase sqLiteDatabase) {
+    private <T extends SugarRecord<?,?>> void deleteTables(SQLiteDatabase sqLiteDatabase) {
         List<T> tables = getDomainClasses(this.context);
         for (T table : tables) {
             sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + table.getSqlName());

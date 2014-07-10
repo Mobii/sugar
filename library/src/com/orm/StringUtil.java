@@ -3,7 +3,7 @@ package com.orm;
 public class StringUtil {
     public static String toSQLName(String javaNotation) {
             if(javaNotation.equalsIgnoreCase("_id"))
-                    return "_id";
+                    return "_ID";
 
             StringBuilder sb = new StringBuilder();
             char[] buf = javaNotation.toCharArray();
