@@ -6,3 +6,8 @@ library/.classpath
 library/library.iml
 *.class
 .DS_Store
+
+# Eclipse project files
+.classpath
+.project
+.settings
