@@ -125,12 +125,16 @@ public abstract class SugarRecord<T,I>{
         }
 
         Cursor cursor = db.query(getSqlName(),null, "ID = ?", new String[]{String.valueOf(getId())}, null, null, null);
-        if(cursor != null && cursor.getCount() > 0) {
+        if(cursor != null) {
+        	if(cursor.getCount() > 0) {
                 cursor.moveToFirst();
                 _id = cursor.getLong(cursor.getColumnIndex("_ID"));
+                values.put("_ID", _id);
                 db.update(getSqlName(), values, "ID = ?", new String[]{String.valueOf(getId())});
-        } else {
+        	} else {
                 _id = db.insert(getSqlName(), null, values);
+        	}
+        	cursor.close();
         }
 
         Log.i("Sugar", getClass().getSimpleName() + " saved : " + _id);
