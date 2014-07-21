@@ -1,23 +1,33 @@
 package com.orm;
 
+import static com.orm.SugarApp.getSugarContext;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+
 import android.content.ContentValues;
-import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteStatement;
 import android.text.TextUtils;
 import android.util.Log;
+
+import com.google.gson.Gson;
 import com.orm.dsl.Ignore;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.sql.Timestamp;
-import java.util.*;
-
-import static com.orm.SugarApp.getSugarContext;
 
 public abstract class SugarRecord<T,I>{
 
@@ -114,8 +124,10 @@ public abstract class SugarRecord<T,I>{
                         } catch (NullPointerException e) {
                             values.put(columnName, (Long) null);
                         }
-                    } else {
+                    } else if (String.class.equals(columnType)) {
                         values.put(columnName, String.valueOf(columnValue));
+                    } else {
+                    	values.put(columnName, new Gson().toJson(columnValue));
                     }
                 }
 
@@ -342,8 +354,9 @@ public abstract class SugarRecord<T,I>{
                         entities.put(field, id);
                     else
                         field.set(this, null);
-                } else
-                    Log.e("Sugar", "Class cannot be read from Sqlite3 database. Please check the type of field " + field.getName() + "(" + field.getType().getName() + ")");
+                } else {
+                    field.set(this, new Gson().fromJson(cursor.getString(columnIndex), field.getType()));
+                }
             } catch (IllegalArgumentException e) {
                 Log.e("field set error", e.getMessage());
             } catch (IllegalAccessException e) {

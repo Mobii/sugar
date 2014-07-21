@@ -33,6 +33,6 @@ public class QueryBuilder {
             return "TEXT";
         }
 
-        return "";
+        return "TEXT";
     }
 }
