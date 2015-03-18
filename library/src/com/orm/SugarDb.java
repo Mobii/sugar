@@ -1,7 +1,11 @@
 package com.orm;
 
-import static com.orm.SugarConfig.getDatabaseVersion;
-import static com.orm.SugarConfig.getDebugEnabled;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -18,13 +22,10 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-import android.content.Context;
-import android.content.pm.PackageManager;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
-import android.database.sqlite.SQLiteOpenHelper;
-import android.util.Log;
 import dalvik.system.DexFile;
+
+import static com.orm.SugarConfig.getDatabaseVersion;
+import static com.orm.SugarConfig.getDebugEnabled;
 
 public class SugarDb extends SQLiteOpenHelper {
     private Context context;
@@ -225,7 +226,11 @@ public class SugarDb extends SQLiteOpenHelper {
                     int version = Integer.valueOf(file.replace(".sql", ""));
 
                     if ((version > oldVersion) && (version <= newVersion)) {
-                        executeScript(db, file);
+                        try {
+                            executeScript(db, file);
+                        } catch(Exception e){
+                            Log.d("Sugar", "sugar script error." + file);
+                        }
                         isSuccess = true;
                     }
                 } catch (NumberFormatException e) {
